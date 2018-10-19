@@ -3,8 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <title>Location test</title>
+    <script src="urlScroll.js"></script>
+    <style>
+        section {
+            min-height: calc(100vh - 1px);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border-bottom: solid 1px gray;
+        }
+
+        section p {
+            font-size: 28px;
+        }
+    </style>
 </head>
 <body>
-<script>document.write(location.pathname)</script>
+<section id="page1">
+    <p>Page 1</p>
+</section>
+<section id="page2">
+    <p>Page 2</p>
+</section>
+<section id="page3">
+    <p>Page 3</p>
+</section>
 </body>
 </html>
