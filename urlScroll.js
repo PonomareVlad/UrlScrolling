@@ -1,6 +1,6 @@
 window.addEventListener('popstate', router);
 window.addEventListener('load', router);
-document.body.addEventListener('scroll', scrollHandler);
+document.addEventListener('scroll', scrollHandler);
 
 
 function scrollHandler() {
