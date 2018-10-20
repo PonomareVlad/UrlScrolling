@@ -1,5 +1,7 @@
 "use strict";
 
+window.exports = window.exports || {};
+ 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
@@ -27,22 +29,32 @@ function () {
 
     _classCallCheck(this, UrlScroll);
 
-    this.attribute = attribute;
-    this.throttleDelay = throttleDelay;
-    this.debug = debug;
-    this.rootNode = rootNode instanceof Node ? rootNode : document.querySelector(rootNode);
-    this.console = this.consoleMethods();
+    // Установка переменных
+    this.attribute = attribute; // Аттрибут блока для поиска путей
+
+    this.throttleDelay = throttleDelay; // Задержка вызова события прокрутки
+
+    this.debug = debug; // Отображение лога
+
     this.disabledScrollEvent = false;
-    window.addEventListener('popstate', this.routingHandler.bind(this));
-    if (document.readyState === 'complete') this.init();else window.addEventListener('load', this.init.bind(this));
+    this.rootNode = rootNode instanceof Node ? rootNode : document.querySelector(rootNode); // Выборка DOM узла, если получен селектор
+
+    this.console = this.consoleMethods(); // Прокси для консольных методов (Сообщения выводятся только при debug = true)
+
+    window.addEventListener('popstate', this.routingHandler.bind(this)); // Событие перемещения по истории (Назад, Вперед)
+
+    if (document.readyState === 'complete') this.init(); // Если страница уже загружена (При динамическом импорте)
+    else window.addEventListener('load', this.init.bind(this)); // Если страница загружется, ждем события onload
   }
 
   _createClass(UrlScroll, [{
     key: "init",
     value: function init() {
-      this.sectionsList = this.rootNode.querySelectorAll("[".concat(this.attribute, "]"));
-      this.rootNode.addEventListener('scroll', UrlScroll.debounce(this.scrollEventHandler.bind(this), this.throttleDelay));
-      this.routingHandler();
+      this.sectionsList = this.rootNode.querySelectorAll("[".concat(this.attribute, "]")); // Кэшируем список блоков, участвующих в смене URL
+
+      this.rootNode.addEventListener('scroll', UrlScroll.debounce(this.scrollEventHandler.bind(this), this.throttleDelay)); // Событие прокрутки страницы
+
+      this.routingHandler(); // Запуск маршрутизации
     }
   }, {
     key: "scrollEventHandler",
@@ -51,12 +63,16 @@ function () {
 
       if (this.disabledScrollEvent) return this.console.log('Scroll event skipped');
       var sectionChanged = false;
-      this.sectionsList.forEach(function (section) {
+      this.sectionsList.forEach( // Перебираем список блоков
+      function (section) {
         if (sectionChanged) return;
         if (!UrlScroll.isScrolledIntoView(section)) return;
-        var targetSection = section.getAttribute(_this.attribute);
-        if (history.state && history.state.section === '' && history.state.section === targetSection) return;
-        if (history.state && history.state.section && history.state.section === targetSection) return;
+        var targetSection = section.getAttribute(_this.attribute); // Получаем значение аттрибута
+
+        if (history.state && history.state.section === '' && history.state.section === targetSection) return; // URL и значение аттрибута пустое
+
+        if (history.state && history.state.section && history.state.section === targetSection) return; // URL и значение аттрибута идентичны
+
         sectionChanged = true;
 
         try {
@@ -68,11 +84,12 @@ function () {
 
           history.pushState({
             section: targetSection
-          }, null, targetSection);
+          }, null, targetSection); // Добавляем новый шаг в историю согласно значению аттрибута
 
           _this.console.log("Section changed to: ".concat(targetSection));
         } catch (e) {
-          _this.console.error('Необходимо повысить значение задержки троттлинга (throttleDelay)', e);
+          _this.console.error('Необходимо повысить значение задержки троттлинга (throttleDelay)', e); // Данное ограничение присутствует в Safari
+
         }
       });
     }
@@ -80,22 +97,23 @@ function () {
     key: "routingHandler",
     value: function routingHandler() {
       var event = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
-      // if (event && !event.state) return true;
-      // if (event) event.preventDefault();
       this.console.debug('Routing start', event);
-      this.disableScrollEvent();
+      this.disableScrollEvent(); // Отключем событие прокрутки, чтобы не создавались лишние шаги в истории
+
       var currentState = event && event.state ? event.state : history.state;
-      var targetSection = currentState && currentState.section ? currentState.section : location.pathname;
-      var targetSectionNode = this.rootNode.querySelector("[".concat(this.attribute, "=\"").concat(targetSection, "\"]"));
+      var targetSection = currentState && currentState.section ? currentState.section : location.pathname; // Целевой путь
+
+      var targetSectionNode = this.rootNode.querySelector("[".concat(this.attribute, "=\"").concat(targetSection, "\"]")); // Блок ассоциированный с целевым путем
+
       if (!targetSectionNode) return setTimeout(function () {
         return document.body.scrollTo(0, 0);
-      }, 1); // this.disabledScrollEvent = true;
+      }, 1); // Если блок не найден, возвращаемся в начало страницы
 
       setTimeout(function () {
         return targetSectionNode.scrollIntoView();
-      }, 1);
-      this.console.debug("Scrolled to ".concat(targetSection), targetSectionNode); // setTimeout(() => this.disabledScrollEvent = false, this.throttleDelay * 2);
+      }, 1); // Прокручиваем страницу к целевому блоку, используя отдельный поток
 
+      this.console.debug("Scrolled to ".concat(targetSection), targetSectionNode);
       return true;
     }
   }, {
@@ -104,6 +122,7 @@ function () {
       var _this2 = this;
 
       var timeout = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.throttleDelay * 2;
+      // Отключие события прокрутки
       this.disabledScrollEvent = true;
       this.console.log('Scroll Event disabled');
       setTimeout(function () {
@@ -117,6 +136,7 @@ function () {
     value: function consoleMethods() {
       var _this3 = this;
 
+      // Прокси для консольных методов (Сообщения выводятся только при debug = true)
       return {
         log: function log() {
           var _console$log;
@@ -150,14 +170,17 @@ function () {
   }], [{
     key: "isScrolledIntoView",
     value: function isScrolledIntoView(elementNode) {
+      // Проверка попадания блока в зону видимости
       var rect = elementNode.getBoundingClientRect();
       var elemTop = rect.top;
-      var elemBottom = rect.bottom;
+      var elemBottom = rect.bottom; // Алгоритм подсчета можно откорректировать под себя
+
       return elemTop >= 0 && elemTop <= window.innerHeight / 2; //(elemBottom <= window.innerHeight);
     }
   }, {
     key: "debounce",
     value: function debounce(func, wait) {
+      // Уменьшение тактов вызова функции
       var timeout;
       return function () {
         for (var _len4 = arguments.length, args = new Array(_len4), _key4 = 0; _key4 < _len4; _key4++) {
@@ -177,4 +200,5 @@ function () {
 }();
 
 exports.default = UrlScroll;
+window.UrlScroll = UrlScroll; // Legacy support
 //# sourceMappingURL=urlScroll.js.map

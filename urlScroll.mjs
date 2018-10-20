@@ -1,25 +1,27 @@
 export default class UrlScroll {
 
     constructor({rootNode = document, attribute = 'id', throttleDelay = 20, debug = false} = {}) {
-        this.attribute = attribute;
-        this.throttleDelay = throttleDelay;
-        this.debug = debug;
-        this.rootNode = rootNode instanceof Node ? rootNode : document.querySelector(rootNode);
-        this.console = this.consoleMethods();
+        // Установка переменных
+        this.attribute = attribute; // Аттрибут блока для поиска путей
+        this.throttleDelay = throttleDelay; // Задержка вызова события прокрутки
+        this.debug = debug; // Отображение лога
         this.disabledScrollEvent = false;
-        window.addEventListener('popstate', this.routingHandler.bind(this));
-        if (document.readyState === 'complete') this.init();
-        else window.addEventListener('load', this.init.bind(this));
+        this.rootNode = rootNode instanceof Node ? rootNode : document.querySelector(rootNode); // Выборка DOM узла, если получен селектор
+        this.console = this.consoleMethods(); // Прокси для консольных методов (Сообщения выводятся только при debug = true)
+        window.addEventListener('popstate', this.routingHandler.bind(this)); // Событие перемещения по истории (Назад, Вперед)
+        if (document.readyState === 'complete') this.init(); // Если страница уже загружена (При динамическом импорте)
+        else window.addEventListener('load', this.init.bind(this)); // Если страница загружется, ждем события onload
     }
 
-    static isScrolledIntoView(elementNode) {
+    static isScrolledIntoView(elementNode) { // Проверка попадания блока в зону видимости
         let rect = elementNode.getBoundingClientRect();
         let elemTop = rect.top;
         let elemBottom = rect.bottom;
+        // Алгоритм подсчета можно откорректировать под себя
         return (elemTop >= 0) && (elemTop <= window.innerHeight / 2)//(elemBottom <= window.innerHeight);
     }
 
-    static debounce(func, wait) {
+    static debounce(func, wait) { // Уменьшение тактов вызова функции
         let timeout;
         return function (...args) {
             const context = this;
@@ -29,51 +31,47 @@ export default class UrlScroll {
     }
 
     init() {
-        this.sectionsList = this.rootNode.querySelectorAll(`[${this.attribute}]`);
-        this.rootNode.addEventListener('scroll', UrlScroll.debounce(this.scrollEventHandler.bind(this), this.throttleDelay));
-        this.routingHandler();
+        this.sectionsList = this.rootNode.querySelectorAll(`[${this.attribute}]`); // Кэшируем список блоков, участвующих в смене URL
+        this.rootNode.addEventListener('scroll', UrlScroll.debounce(this.scrollEventHandler.bind(this), this.throttleDelay)); // Событие прокрутки страницы
+        this.routingHandler(); // Запуск маршрутизации
     }
 
     scrollEventHandler() {
         if (this.disabledScrollEvent) return this.console.log('Scroll event skipped');
         let sectionChanged = false;
-        this.sectionsList.forEach(
+        this.sectionsList.forEach( // Перебираем список блоков
             section => {
                 if (sectionChanged) return;
                 if (!UrlScroll.isScrolledIntoView(section)) return;
-                let targetSection = section.getAttribute(this.attribute);
-                if (history.state && history.state.section === '' && history.state.section === targetSection) return;
-                if (history.state && history.state.section && history.state.section === targetSection) return;
+                let targetSection = section.getAttribute(this.attribute); // Получаем значение аттрибута
+                if (history.state && history.state.section === '' && history.state.section === targetSection) return; // URL и значение аттрибута пустое
+                if (history.state && history.state.section && history.state.section === targetSection) return; // URL и значение аттрибута идентичны
                 sectionChanged = true;
                 try {
                     let stateData = {section: targetSection};
                     this.console.debug('PushState', stateData, targetSection);
-                    history.pushState({section: targetSection}, null, targetSection);
+                    history.pushState({section: targetSection}, null, targetSection); // Добавляем новый шаг в историю согласно значению аттрибута
                     this.console.log(`Section changed to: ${targetSection}`)
                 } catch (e) {
-                    this.console.error('Необходимо повысить значение задержки троттлинга (throttleDelay)', e)
+                    this.console.error('Необходимо повысить значение задержки троттлинга (throttleDelay)', e) // Данное ограничение присутствует в Safari
                 }
             }
         )
     }
 
     routingHandler(event = null) {
-        // if (event && !event.state) return true;
-        // if (event) event.preventDefault();
         this.console.debug('Routing start', event);
-        this.disableScrollEvent();
+        this.disableScrollEvent(); // Отключем событие прокрутки, чтобы не создавались лишние шаги в истории
         let currentState = event && event.state ? event.state : history.state;
-        let targetSection = currentState && currentState.section ? currentState.section : location.pathname;
-        let targetSectionNode = this.rootNode.querySelector(`[${this.attribute}="${targetSection}"]`);
-        if (!targetSectionNode) return setTimeout(() => document.body.scrollTo(0, 0), 1);
-        // this.disabledScrollEvent = true;
-        setTimeout(() => targetSectionNode.scrollIntoView(), 1);
+        let targetSection = currentState && currentState.section ? currentState.section : location.pathname; // Целевой путь
+        let targetSectionNode = this.rootNode.querySelector(`[${this.attribute}="${targetSection}"]`); // Блок ассоциированный с целевым путем
+        if (!targetSectionNode) return setTimeout(() => document.body.scrollTo(0, 0), 1); // Если блок не найден, возвращаемся в начало страницы
+        setTimeout(() => targetSectionNode.scrollIntoView(), 1); // Прокручиваем страницу к целевому блоку, используя отдельный поток
         this.console.debug(`Scrolled to ${targetSection}`, targetSectionNode);
-        // setTimeout(() => this.disabledScrollEvent = false, this.throttleDelay * 2);
         return true;
     }
 
-    disableScrollEvent(timeout = this.throttleDelay * 2) {
+    disableScrollEvent(timeout = this.throttleDelay * 2) { // Отключие события прокрутки
         this.disabledScrollEvent = true;
         this.console.log('Scroll Event disabled');
         setTimeout(() => {
@@ -82,7 +80,7 @@ export default class UrlScroll {
         }, timeout);
     }
 
-    consoleMethods() {
+    consoleMethods() { // Прокси для консольных методов (Сообщения выводятся только при debug = true)
         return {
             log: (...args) => this.debug ? console.log.call(console, ...args) : null,
             debug: (...args) => this.debug ? console.debug.call(console, ...args) : null,
@@ -90,3 +88,5 @@ export default class UrlScroll {
         }
     }
 }
+
+window.UrlScroll = UrlScroll; // Legacy support

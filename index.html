@@ -1,16 +1,30 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Location test</title>
+    <title>urlScroll test</title>
+
+    <!-- ES6+ Modules import -->
     <script type="module">
         import UrlScroll from './urlScroll.mjs';
 
-        new UrlScroll({debug: true});
+        new UrlScroll({
+            rootNode: document,
+            attribute: 'data-path',
+            throttleDelay: 20,
+            debug: true
+        });
     </script>
+
+    <!-- CommonJS modules import (Emulation) for older browsers -->
     <script nomodule>var exports = {};</script>
     <script nomodule src="dist/urlScroll.js"></script>
-    <script nomodule>new exports.default({debug: true});</script>
+    <script nomodule>new UrlScroll({
+        rootNode: document,
+        attribute: 'data-path',
+        throttleDelay: 20,
+        debug: true
+    });</script>
     <style>
 
         root {
@@ -38,9 +52,12 @@
     </style>
 </head>
 <body>
-<section id=""></section>
+<section>
+    <p>Не Page - и соответственно не считается</p>
+</section>
 <script>
-    for (let i = 1; i <= 100; i++) document.write(`<section id="/page${i}"${Math.random() >= 0.5 ? 'class="large"' : ''}><p>Page ${i}</p></section>`);
+    // 100 Demo sections
+    for (let i = 1; i <= 100; i++) document.write(`<section data-path="page${i}"${Math.random() >= 0.5 ? ' class="large"' : ''}><p>Page ${i}</p></section>`);
 </script>
 <div>
     <a href="https://freelansim.ru/freelancers/PonomareVlad">Владислав Пономарев</a>
