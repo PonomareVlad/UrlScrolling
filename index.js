@@ -1,5 +1,5 @@
 "use strict";
-window.exports=window.exports||{};
+
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
