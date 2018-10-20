@@ -2,16 +2,18 @@
   "name": "urlscrolling",
   "version": "1.0.0",
   "description": "Dynamicly change current URL on scroll between different sections",
-  "main": "urlScroll.js",
-  "scripts": {},
+  "main": "index",
+  "files": [
+    "index.*"
+  ],
+  "scripts": {
+    "prepare": "babel index.mjs --out-file index.js && babel index.js --minified --no-comments --source-maps -o index.min.js"
+  },
   "author": "PonomareVlad",
   "license": "ISC",
   "devDependencies": {
     "@babel/cli": "^7.1.2",
     "@babel/core": "^7.1.2",
     "@babel/preset-env": "^7.1.0"
-  },
-  "dependencies": {
-    "@babel/polyfill": "^7.0.0"
   }
 }

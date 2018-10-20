@@ -6,26 +6,22 @@
 
     <!-- ES6+ Modules import -->
     <script type="module">
-        import UrlScroll from './urlScroll.mjs';
+        import UrlScroll from './index.mjs';
 
-        new UrlScroll({
-            rootNode: document,
-            attribute: 'data-path',
-            headerSection: true,
-            throttleDelay: 20,
+        window.urlScroll = new UrlScroll({
+            pathAttribute: 'data-path',
             debug: true
         });
     </script>
 
     <!-- CommonJS modules import (Emulation) for older browsers -->
-    <script nomodule src="dist/urlScroll.js"></script>
-    <script nomodule>new UrlScroll({
-        rootNode: document,
-        attribute: 'data-path',
-        headerSection: true,
-        throttleDelay: 20,
-        debug: true
-    });</script>
+    <script nomodule src="index.js"></script>
+    <script nomodule>
+        new UrlScroll({
+            pathAttribute: 'data-path',
+            debug: true
+        });
+    </script>
     <style>
 
         root {
