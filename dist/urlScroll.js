@@ -1,7 +1,5 @@
 "use strict";
 
-window.exports = window.exports || {};
- 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
@@ -22,6 +20,8 @@ function () {
         rootNode = _ref$rootNode === void 0 ? document : _ref$rootNode,
         _ref$attribute = _ref.attribute,
         attribute = _ref$attribute === void 0 ? 'id' : _ref$attribute,
+        _ref$headerSection = _ref.headerSection,
+        headerSection = _ref$headerSection === void 0 ? true : _ref$headerSection,
         _ref$throttleDelay = _ref.throttleDelay,
         throttleDelay = _ref$throttleDelay === void 0 ? 20 : _ref$throttleDelay,
         _ref$debug = _ref.debug,
@@ -35,6 +35,8 @@ function () {
     this.throttleDelay = throttleDelay; // Задержка вызова события прокрутки
 
     this.debug = debug; // Отображение лога
+
+    this.headerSection = headerSection; // Обработка перехода в шапку сайта, как шаг в истории
 
     this.disabledScrollEvent = false;
     this.rootNode = rootNode instanceof Node ? rootNode : document.querySelector(rootNode); // Выборка DOM узла, если получен селектор
@@ -67,13 +69,12 @@ function () {
       function (section) {
         if (sectionChanged) return;
         if (!UrlScroll.isScrolledIntoView(section)) return;
+        sectionChanged = true;
         var targetSection = section.getAttribute(_this.attribute); // Получаем значение аттрибута
 
         if (history.state && history.state.section === '' && history.state.section === targetSection) return; // URL и значение аттрибута пустое
 
         if (history.state && history.state.section && history.state.section === targetSection) return; // URL и значение аттрибута идентичны
-
-        sectionChanged = true;
 
         try {
           var stateData = {
@@ -92,6 +93,13 @@ function () {
 
         }
       });
+      if (this.headerSection && !sectionChanged) if (history.state && history.state.section) {
+        // Переход на первый экран страницы, в случае если над первой секцией есть меню или контент
+        history.pushState({
+          section: false
+        }, null, '/');
+        this.console.log('Changed to Header');
+      }
     }
   }, {
     key: "routingHandler",
@@ -173,9 +181,9 @@ function () {
       // Проверка попадания блока в зону видимости
       var rect = elementNode.getBoundingClientRect();
       var elemTop = rect.top;
-      var elemBottom = rect.bottom; // Алгоритм подсчета можно откорректировать под себя
-
-      return elemTop >= 0 && elemTop <= window.innerHeight / 2; //(elemBottom <= window.innerHeight);
+      var elemBottom = rect.bottom;
+      var halfWindowHeight = parseInt(window.innerHeight / 2);
+      return elemTop <= halfWindowHeight + 1 && elemBottom >= halfWindowHeight - 1; // Алгоритм подсчета можно откорректировать под себя
     }
   }, {
     key: "debounce",

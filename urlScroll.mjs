@@ -1,33 +1,17 @@
 export default class UrlScroll {
 
-    constructor({rootNode = document, attribute = 'id', throttleDelay = 20, debug = false} = {}) {
+    constructor({rootNode = document, attribute = 'id', headerSection = true, throttleDelay = 20, debug = false} = {}) {
         // Установка переменных
         this.attribute = attribute; // Аттрибут блока для поиска путей
         this.throttleDelay = throttleDelay; // Задержка вызова события прокрутки
         this.debug = debug; // Отображение лога
+        this.headerSection = headerSection; // Обработка перехода в шапку сайта, как шаг в истории
         this.disabledScrollEvent = false;
         this.rootNode = rootNode instanceof Node ? rootNode : document.querySelector(rootNode); // Выборка DOM узла, если получен селектор
         this.console = this.consoleMethods(); // Прокси для консольных методов (Сообщения выводятся только при debug = true)
         window.addEventListener('popstate', this.routingHandler.bind(this)); // Событие перемещения по истории (Назад, Вперед)
         if (document.readyState === 'complete') this.init(); // Если страница уже загружена (При динамическом импорте)
         else window.addEventListener('load', this.init.bind(this)); // Если страница загружется, ждем события onload
-    }
-
-    static isScrolledIntoView(elementNode) { // Проверка попадания блока в зону видимости
-        let rect = elementNode.getBoundingClientRect();
-        let elemTop = rect.top;
-        let elemBottom = rect.bottom;
-        // Алгоритм подсчета можно откорректировать под себя
-        return (elemTop >= 0) && (elemTop <= window.innerHeight / 2)//(elemBottom <= window.innerHeight);
-    }
-
-    static debounce(func, wait) { // Уменьшение тактов вызова функции
-        let timeout;
-        return function (...args) {
-            const context = this;
-            clearTimeout(timeout);
-            timeout = setTimeout(() => func.apply(context, args), wait)
-        }
     }
 
     init() {
@@ -43,10 +27,10 @@ export default class UrlScroll {
             section => {
                 if (sectionChanged) return;
                 if (!UrlScroll.isScrolledIntoView(section)) return;
+                sectionChanged = true;
                 let targetSection = section.getAttribute(this.attribute); // Получаем значение аттрибута
                 if (history.state && history.state.section === '' && history.state.section === targetSection) return; // URL и значение аттрибута пустое
                 if (history.state && history.state.section && history.state.section === targetSection) return; // URL и значение аттрибута идентичны
-                sectionChanged = true;
                 try {
                     let stateData = {section: targetSection};
                     this.console.debug('PushState', stateData, targetSection);
@@ -56,7 +40,11 @@ export default class UrlScroll {
                     this.console.error('Необходимо повысить значение задержки троттлинга (throttleDelay)', e) // Данное ограничение присутствует в Safari
                 }
             }
-        )
+        );
+        if (this.headerSection && !sectionChanged) if (history.state && history.state.section) { // Переход на первый экран страницы, в случае если над первой секцией есть меню или контент
+            history.pushState({section: false}, null, '/');
+            this.console.log('Changed to Header');
+        }
     }
 
     routingHandler(event = null) {
@@ -85,6 +73,23 @@ export default class UrlScroll {
             log: (...args) => this.debug ? console.log.call(console, ...args) : null,
             debug: (...args) => this.debug ? console.debug.call(console, ...args) : null,
             error: (...args) => this.debug ? console.error.call(console, ...args) : null,
+        }
+    }
+
+    static isScrolledIntoView(elementNode) { // Проверка попадания блока в зону видимости
+        let rect = elementNode.getBoundingClientRect();
+        let elemTop = rect.top;
+        let elemBottom = rect.bottom;
+        let halfWindowHeight = parseInt(window.innerHeight / 2);
+        return (elemTop <= halfWindowHeight + 1 && elemBottom >= halfWindowHeight - 1); // Алгоритм подсчета можно откорректировать под себя
+    }
+
+    static debounce(func, wait) { // Уменьшение тактов вызова функции
+        let timeout;
+        return function (...args) {
+            const context = this;
+            clearTimeout(timeout);
+            timeout = setTimeout(() => func.apply(context, args), wait)
         }
     }
 }
