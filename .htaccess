@@ -2,6 +2,8 @@ RewriteEngine on
 RewriteCond %{REQUEST_FILENAME} !-s
 RewriteRule ^(.+)$ index.html?_apiPath=$1 [QSA,L]
 
+AddDefaultCharset UTF-8
+
 <IfModule mod_mime.c>
     AddType text/javascript                             js mjs
 </IfModule>
