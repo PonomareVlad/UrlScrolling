@@ -7,7 +7,7 @@
     "index.*"
   ],
   "scripts": {
-    "prepare": "babel index.mjs --out-file index.js && babel index.js --minified --no-comments --source-maps -o index.min.js"
+    "prepare": "babel index.mjs --out-file index.js --presets @babel/env && babel index.js --minified --no-comments --source-maps -o index.min.js"
   },
   "author": "PonomareVlad",
   "license": "ISC",
