@@ -26,7 +26,7 @@ export default class UrlScroll {
         this.sectionsList.forEach( // Перебираем список блоков
             section => {
                 if (sectionChanged) return;
-                if (!UrlScroll.isScrolledIntoView(section)) return;
+                if (!UrlScroll.isScrolledIntoView(section)) return; // Проверка попадания блока в зону видимости
                 sectionChanged = true;
                 let targetSection = section.getAttribute(this.attribute); // Получаем значение аттрибута
                 if (history.state && history.state.section === '' && history.state.section === targetSection) return; // URL и значение аттрибута пустое

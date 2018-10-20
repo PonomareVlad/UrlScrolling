@@ -68,7 +68,8 @@ function () {
       this.sectionsList.forEach( // Перебираем список блоков
       function (section) {
         if (sectionChanged) return;
-        if (!UrlScroll.isScrolledIntoView(section)) return;
+        if (!UrlScroll.isScrolledIntoView(section)) return; // Проверка попадания блока в зону видимости
+
         sectionChanged = true;
         var targetSection = section.getAttribute(_this.attribute); // Получаем значение аттрибута
 
