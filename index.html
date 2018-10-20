@@ -3,8 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <title>Location test</title>
-    <script src="urlScroll.js"></script>
+    <script type="module">
+        import UrlScroll from './urlScroll.mjs';
+
+        new UrlScroll({debug: true});
+    </script>
+    <script nomodule>var exports = {};</script>
+    <script nomodule src="dist/urlScroll.js"></script>
+    <script nomodule>new exports.default({debug: true});</script>
     <style>
+
+        root {
+            font-family: sans-serif;
+        }
+
         section {
             min-height: calc(80vh - 1px);
             display: flex;
@@ -17,24 +29,19 @@
         section p {
             font-size: 28px;
         }
+
+        section.large {
+            min-height: calc(120vh - 1px);
+            background-color: lightgray;
+        }
+
     </style>
 </head>
 <body>
-<section id="/page1">
-    <p>Page 1</p>
-</section>
-<section id="/page2">
-    <p>Page 2</p>
-</section>
-<section id="/page3">
-    <p>Page 3</p>
-</section>
-<section id="/page4">
-    <p>Page 4</p>
-</section>
-<section id="/page5">
-    <p>Page 5</p>
-</section>
+<section id=""></section>
+<script>
+    for (let i = 1; i <= 100; i++) document.write(`<section id="/page${i}"${Math.random() >= 0.5 ? 'class="large"' : ''}><p>Page ${i}</p></section>`);
+</script>
 <div>
     <a href="https://freelansim.ru/freelancers/PonomareVlad">Владислав Пономарев</a>
 </div>
