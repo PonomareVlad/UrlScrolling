@@ -1,5 +1,7 @@
 "use strict";
 
+window.exports = window.exports || {};
+
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
@@ -20,6 +22,12 @@ function () {
     var _ref = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
         _ref$scrollNode = _ref.scrollNode,
         scrollNode = _ref$scrollNode === void 0 ? document : _ref$scrollNode,
+        _ref$scrollEventNode = _ref.scrollEventNode,
+        scrollEventNode = _ref$scrollEventNode === void 0 ? document : _ref$scrollEventNode,
+        _ref$beforeRouterScro = _ref.beforeRouterScrollHook,
+        beforeRouterScrollHook = _ref$beforeRouterScro === void 0 ? false : _ref$beforeRouterScro,
+        _ref$customRouterScro = _ref.customRouterScrollWorker,
+        customRouterScrollWorker = _ref$customRouterScro === void 0 ? false : _ref$customRouterScro,
         _ref$pathAttribute = _ref.pathAttribute,
         pathAttribute = _ref$pathAttribute === void 0 ? 'id' : _ref$pathAttribute,
         _ref$headerSection = _ref.headerSection,
@@ -34,6 +42,9 @@ function () {
     // Установка параметров плагина
     this.options = {
       scrollNode: scrollNode instanceof Node ? scrollNode : document.querySelector(scrollNode),
+      scrollEventNode: scrollEventNode,
+      beforeRouterScrollHook: beforeRouterScrollHook,
+      customRouterScrollWorker: customRouterScrollWorker,
       pathAttribute: pathAttribute,
       headerSection: headerSection,
       scrollEventDelay: scrollEventDelay,
@@ -55,25 +66,7 @@ function () {
 
       this.routingHandler(); // Событие прокрутки на целевом узле
 
-      this.listenEvent('scroll', this.scrollEventHandler, this.options.scrollNode);
-    }
-  }, {
-    key: "routingHandler",
-    value: function routingHandler(event) {
-      this.console.debug('Routing start', event); // Временное отключение обработчика прокрутки (Защита от создавания лишних шагов в истории)
-
-      this.disableScrollEvent(); // Целевой путь URL
-
-      var targetPath = this.currentStateData(event).sectionPath || this.currentPath(); // Узел секции ассоцированный с целевым путем URL
-
-      var targetSectionNode = this.options.scrollNode.querySelector("[".concat(this.options.pathAttribute, "=\"").concat(targetPath, "\"]")); // Прокрутка в начало целевой секции, или, в случае ее отсутствия, в начало страницы
-
-      targetSectionNode ? this.asyncThread(function () {
-        return targetSectionNode.scrollIntoView();
-      }) : this.asyncThread(function () {
-        return document.body.scrollTo(0, 0);
-      });
-      if (targetSectionNode) this.console.debug("Scrolled to ".concat(targetPath), targetSectionNode);
+      if (this.options.scrollEventNode) this.listenEvent('scroll', this.scrollEventHandler, this.options.scrollEventNode);
     }
   }, {
     key: "scrollEventHandler",
@@ -89,23 +82,26 @@ function () {
           if (historyChanged) return; // Проверка нахождения секции в фрейме окна
 
           if (!isScrolledIntoView(sectionNode)) return;
-          historyChanged = true; // Путь URL назаченный для текущей секции
-
-          var sectionPath = sectionNode.getAttribute(_this.options.pathAttribute); // Проверка пути URL
-
-          if (!_this.checkPath(sectionPath)) return;
-
-          _this.console.log("Section changed to: ".concat(sectionPath)); // Добавление шага в историю браузера и смена URL
-
-
-          return _this.changeState({
-            sectionPath: sectionPath
-          });
+          historyChanged = true;
+          return _this.setSectionState(sectionNode);
         }); // Вызов обработчика Шапки, если все секции находятся за пределами фрейма окна
 
 
         if (!historyChanged) return _this.headerState(); // Установка времени задержки для ограничения такта
       }, this.options.scrollEventDelay)();
+    }
+  }, {
+    key: "setSectionState",
+    value: function setSectionState(sectionNode) {
+      // Путь URL назаченный для текущей секции
+      var sectionPath = sectionNode.getAttribute(this.options.pathAttribute); // Проверка пути URL
+
+      if (!this.checkPath(sectionPath)) return;
+      this.console.log("Section changed to: ".concat(sectionPath)); // Добавление шага в историю браузера и смена URL
+
+      return this.changeState({
+        sectionPath: sectionPath
+      });
     }
   }, {
     key: "headerState",
@@ -130,10 +126,34 @@ function () {
       }
     }
   }, {
-    key: "asyncThread",
-    value: function asyncThread(func) {
-      // Вызов функции в отдельном потоке
-      return setTimeout(func, 1);
+    key: "routingHandler",
+    value: function routingHandler(event) {
+      this.console.debug('Routing start', event); // Временное отключение обработчика прокрутки (Защита от создавания лишних шагов в истории)
+
+      this.disableScrollEvent(); // Целевой путь URL
+
+      var targetPath = this.currentStateData(event).sectionPath || this.currentPath(); // Узел секции ассоцированный с целевым путем URL
+
+      var targetSectionNode = this.options.scrollNode.querySelector("[".concat(this.options.pathAttribute, "=\"").concat(targetPath, "\"]"));
+      if (this.options.beforeRouterScrollHook) try {
+        this.options.beforeRouterScrollHook(targetSectionNode);
+      } catch (e) {
+        this.console.error(e);
+      }
+
+      if (this.options.customRouterScrollWorker) {
+        try {
+          this.options.customRouterScrollWorker(targetSectionNode);
+        } catch (e) {
+          this.console.error(e);
+        }
+      } else targetSectionNode ? UrlScroll.asyncThread(function () {
+        return targetSectionNode.scrollIntoView();
+      }) : UrlScroll.asyncThread(function () {
+        return document.body.scrollTo(0, 0);
+      });
+
+      if (targetSectionNode) this.console.debug("Scrolled to ".concat(targetPath), targetSectionNode);
     }
   }, {
     key: "checkPath",
@@ -200,6 +220,13 @@ function () {
           return _this3.options.debug ? (_console$method = console[method]).call.apply(_console$method, [console].concat(args)) : null;
         }) && proxyObject;
       }, {});
+    }
+  }], [{
+    key: "asyncThread",
+    value: function asyncThread(func) {
+      var timeout = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 1;
+      // Вызов функции в отдельном потоке
+      return setTimeout(func, timeout);
     }
   }]);
 
